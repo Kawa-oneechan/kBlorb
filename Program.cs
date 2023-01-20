@@ -65,7 +65,7 @@ namespace kBlorb
 			}
 			catch (FileNotFoundException x)
 			{
-				Console.WriteLine("Error: file {0} not found.", x.FileName);
+				Console.WriteLine("Error: file {0} not found.", Path.GetFileName(x.FileName));
 				return;
 			}
 			catch (JsonException x)
@@ -285,7 +285,7 @@ namespace kBlorb
 						}
 						catch (FileNotFoundException x)
 						{
-							Console.WriteLine("Error: could not find {0} for inclusion.", x.FileName);
+							Console.WriteLine("Error: could not find {0} for inclusion.", Path.GetFileName(x.FileName));
 							return false;
 						}
 						if (type == "Exec" && target == null)
