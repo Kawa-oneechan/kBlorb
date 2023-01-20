@@ -45,9 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="json\Kawa.Json.cs" />
-    <Compile Include="json\Kawa.Json.Patch.cs" />
     <Compile Include="json\Kawa.Json.Path.cs" />
-    <Compile Include="json\Kawa.Json.Schema.cs" />
     <Compile Include="Motorola.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

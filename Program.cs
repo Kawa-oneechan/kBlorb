@@ -86,7 +86,7 @@ namespace kBlorb
 
 			if (target == null)
 			{
-				target = Path.ChangeExtension(source, "blb");
+				target = Path.ChangeExtension(source, longExts ? "blorb" : "blb");
 				Console.WriteLine("Note: decided on {0}.", target);
 			}
 
@@ -128,13 +128,18 @@ namespace kBlorb
 				{ ".z7", "Exec" },
 				{ ".z8", "Exec" },
 				{ ".ulx", "Exec" },
+				{ ".taf", "Exec" },
 				{ ".png", "Pict" },
 				{ ".jpg", "Pict" },
+				{ ".gif", "Pict" },
 				{ ".ogg", "Snd " },
 				{ ".mod", "Snd " },
 				{ ".s3m", "Snd " },
 				{ ".xm", "Snd " },
 				{ ".it", "Snd " },
+				{ ".wav", "Snd " },
+				{ ".mid", "Snd " },
+				{ ".mp3", "Snd " },
 			};
 			var fileToChunk = new Dictionary<string, string>()
 			{
@@ -145,19 +150,28 @@ namespace kBlorb
 				{ ".z7", "ZCOD" },
 				{ ".z8", "ZCOD" },
 				{ ".ulx", "GLUL" },
+				{ ".taf", "ADRI" },
 				{ ".png", "PNG " },
 				{ ".jpg", "JPEG" },
+				{ ".gif", "GIF " },
 				{ ".ogg", "OGGV" },
 				{ ".mod", "MOD " },
 				{ ".s3m", "MOD " },
 				{ ".xm", "MOD " },
 				{ ".it", "MOD " },
+				{ ".wav", "WAV " },
+				{ ".mid", "MIDI" },
+				{ ".mp3", "MP3 " },
 			};
+
 			var chunkToBlorb = new Dictionary<string, string>()
 			{
 				{ "ZCOD", longExts ? "zblorb" : "zlb" },
 				{ "GLUL", longExts ? "gblorb" : "glb" },
+				{ "ADRI", "adriftblorb" }, //yecch
 			};
+
+			bool isAdrift = false;
 
 			foreach (var file in files)
 			{
@@ -214,9 +228,12 @@ namespace kBlorb
 						index++;
 						autoIndex++;
 					}
-					if (type == "Exec" && index != 0)
+					if (type == "Exec")
 					{
-						Console.WriteLine("Warning: Exec chunk is not #0.");
+						if (index != 0)
+							Console.WriteLine("Warning: Exec chunk is not #0.");
+						var ext = Path.GetExtension(source).ToLowerInvariant();
+						isAdrift = ext == ".taf";
 					}
 					if (type == "Pict")
 					{
@@ -229,9 +246,7 @@ namespace kBlorb
 						ratios.Insert(0, index);
 						pics.Add(ratios);
 						if (fob.Path<bool>("/cover", false))
-						{
 							coverPic = index;
-						}
 					}
 					if (type == "Rect")
 					{
@@ -248,8 +263,24 @@ namespace kBlorb
 						var ext = Path.GetExtension(source).ToLowerInvariant();
 						if (fileToChunk.ContainsKey(ext))
 							chunkName = fileToChunk[ext];
-						try
+						if (!isAdrift &&
+							(ext == ".gif") ||
+							(ext == ".mid") ||
+							(ext == ".wav") ||
+							(ext == ".mp3"))
 						{
+							if (allowAdriftInInform)
+								Console.WriteLine("Warning: tried to use Adrift-only media ({0}) in non-Adrift game.", ext);
+							else
+							{
+								Console.WriteLine("Error: tried to use Adrift-only media ({0}) in non-Adrift game.", ext);
+								Console.WriteLine("(if you insist, use -ad to demote this to a warning.)");
+								return false;
+							}
+						}
+
+						try
+							{
 							newBlob = new RiffDataChunk(chunkName, File.ReadAllBytes(source));
 						}
 						catch (FileNotFoundException x)
