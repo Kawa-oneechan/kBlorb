@@ -46,7 +46,6 @@ An example JSON blurb that I use to develop this with:
 		},
 		//alt text, also for sound resources.
 		{ "src": "landscape.png", "alt": "A beautiful landscape." },
-		}
 		{ "src": "cover.jpg", "cover": true }
 		//last pic to say it's the cover wins
 
