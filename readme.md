@@ -44,6 +44,9 @@ An example JSON blurb that I use to develop this with:
 			//[ 2 ] --> [ 2, 2, 2 ] --> [ 2,1, 2,1, 2,1 ]
 			//all that is only used if there's a resolution block
 		},
+		//alt text, also for sound resources.
+		{ "src": "landscape.png", "alt": "A beautiful landscape." },
+		}
 		{ "src": "cover.jpg", "cover": true }
 		//last pic to say it's the cover wins
 
