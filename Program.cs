@@ -18,6 +18,7 @@ namespace kBlorb
 
 		static UInt32 runningSize = 0;
 		static List<List<int>> pics = new List<List<int>>();
+		static Dictionary<int, Tuple<string, string>> descs = new Dictionary<int, Tuple<string, string>>();
 		static int coverPic = -1;
 
 		static bool longExts = false;
@@ -90,8 +91,9 @@ namespace kBlorb
 				Console.WriteLine("Note: decided on {0}.", target);
 			}
 
-			HandleReso();
 			HandleMeta();
+			HandleRDesc();
+			HandleReso();
 
 			try
 			{
@@ -208,6 +210,7 @@ namespace kBlorb
 					var fob = thisFile as JsonObj;
 					index = fob.Path<int>("/index", index);
 					type = fob.Path<string>("/type", type);
+					var desc = fob.Path<string>("/alt", null);
 					if (type == "????")
 					{
 						if (fob.ContainsKey("src"))
@@ -222,11 +225,16 @@ namespace kBlorb
 					if (type == "rectangle") type = "Rect";
 					if (type == "rect") type = "Rect";
 					if (type == "sound") type = "Snd ";
-					if (type == "Snd " && index < 3)
+					if (type == "Snd ")
 					{
-						Console.WriteLine("Note: skipping ahead to #3 for a sound.");
-						index++;
-						autoIndex++;
+						if (index < 3)
+						{
+							Console.WriteLine("Note: skipping ahead to #3 for a sound.");
+							index++;
+							autoIndex++;
+						}
+						if (desc != null)
+							descs.Add(index, Tuple.Create("Snd ", desc));
 					}
 					if (type == "Exec")
 					{
@@ -247,6 +255,8 @@ namespace kBlorb
 						pics.Add(ratios);
 						if (fob.Path<bool>("/cover", false))
 							coverPic = index;
+						if (desc != null)
+							descs.Add(index, Tuple.Create("Pict", desc));
 					}
 					if (type == "Rect")
 					{
@@ -312,6 +322,34 @@ namespace kBlorb
 					runningSize++;
 				}
 			}
+			return true;
+		}
+
+		public static bool HandleRDesc()
+		{
+			if (descs.Count == 0)
+				return false;
+
+			var rDescData = new List<byte>();
+			ebWriter.Seek(0, SeekOrigin.Begin);
+			ebWriter.WriteMoto((UInt32)descs.Count);
+			rDescData.AddRange(eightBytes.Take(4));
+			foreach (var desc in descs)
+			{
+				ebWriter.Seek(0, SeekOrigin.Begin);
+				ebWriter.Write(desc.Value.Item1.ToCharArray());
+				ebWriter.WriteMoto((UInt32)desc.Key);
+				rDescData.AddRange(eightBytes);
+				ebWriter.Seek(0, SeekOrigin.Begin);
+				ebWriter.WriteMoto((UInt32)desc.Value.Item2.Length);
+				rDescData.AddRange(eightBytes.Take(4));
+				rDescData.AddRange(Encoding.UTF8.GetBytes(desc.Value.Item2));
+				if (desc.Value.Item2.Length % 2 == 1)
+					rDescData.Add(0);
+			}
+
+			var chunk = new RiffDataChunk("RDesc", rDescData.ToArray());
+			form.Children.Add(chunk);
 			return true;
 		}
 
@@ -428,8 +466,10 @@ namespace kBlorb
 			if (meta is string)
 			{
 				//it's a block of XML?
-				var chunk = new RiffDataChunk("IFmd", UTF8Encoding.UTF8.GetBytes(meta as string));
+				var chunk = new RiffDataChunk("IFmd", Encoding.UTF8.GetBytes(meta as string));
 				form.Children.Add(chunk);
+				if ((meta as string).Length % 2 == 1)
+					form.Children.Add(padding);
 			}
 			return true;
 		}
