@@ -95,6 +95,9 @@ namespace kBlorb
 			HandleRDesc();
 			HandleReso();
 
+			if (json.Path<bool>("/apal", false))
+				form.Children.Add(new RiffDataChunk("APal", new byte[] { }));
+
 			try
 			{
 				var blorb = new BinaryWriter(File.Open(target, FileMode.Create));
@@ -209,6 +212,7 @@ namespace kBlorb
 				{
 					var fob = thisFile as JsonObj;
 					index = fob.Path<int>("/index", index);
+					autoIndex = index + 1;
 					type = fob.Path<string>("/type", type);
 					var desc = fob.Path<string>("/alt", null);
 					if (type == "????")
@@ -290,7 +294,7 @@ namespace kBlorb
 						}
 
 						try
-							{
+						{
 							newBlob = new RiffDataChunk(chunkName, File.ReadAllBytes(source));
 						}
 						catch (FileNotFoundException x)
