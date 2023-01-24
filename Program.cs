@@ -33,7 +33,7 @@ namespace kBlorb
 		static RiffFormChunk form = new RiffFormChunk("IFRS");
 		static RiffTrunkChunk rIdx = new RiffTrunkChunk("RIdx");
 
-		static void Main(string[] args)
+		static int Main(string[] args)
 		{
 			var thisAsm = System.Reflection.Assembly.GetCallingAssembly().GetName();
 			Console.WriteLine("{0} {1}.{2} -- a blorbing tool by Kawa", thisAsm.Name, thisAsm.Version.Major, thisAsm.Version.Minor);
@@ -41,11 +41,11 @@ namespace kBlorb
 			if (args.Length == 0)
 			{
 				DoHelp(false);
-				return;
+				return 1;
 			}
 			foreach (var arg in args)
 			{
-				if (arg == "-h") { DoHelp(true); return; }
+				if (arg == "-h") { DoHelp(true); return 0; }
 				if (arg == "-l") longExts = true;
 				if (arg == "-ad") allowAdriftInInform = true;
 			}
@@ -53,7 +53,7 @@ namespace kBlorb
 			if (source.StartsWith("-"))
 			{
 				DoHelp(false);
-				return;
+				return 0;
 			}
 
 			try
@@ -67,13 +67,13 @@ namespace kBlorb
 			catch (FileNotFoundException x)
 			{
 				Console.WriteLine("Error: file {0} not found.", Path.GetFileName(x.FileName));
-				return;
+				return 2;
 			}
 			catch (JsonException x)
 			{
 				Console.WriteLine("Error: could not read file as JSON object.");
 				Console.WriteLine(x.Message);
-				return;
+				return 3;
 			}
 
 			target = json.Path<string>("/target", null);
@@ -83,7 +83,7 @@ namespace kBlorb
 			form.Children.Add(rIdx);
 
 			if (!HandleFiles())
-				return;
+				return 1;
 
 			if (target == null)
 			{
@@ -109,9 +109,10 @@ namespace kBlorb
 			{
 				Console.WriteLine("Error: could not write blorb.");
 				Console.WriteLine(x.Message);
-				return;
+				return 3;
 			}
 			Console.WriteLine("Done!");
+			return 0;
 		}
 
 		public static bool HandleFiles()
