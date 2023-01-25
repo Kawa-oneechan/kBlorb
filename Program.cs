@@ -95,8 +95,11 @@ namespace kBlorb
 			HandleRDesc();
 			HandleReso();
 
+			//TODO: add "adaptive" or "apal" bool to Picture entries, create APal with listed entries.
+			/*
 			if (json.Path<bool>("/apal", false))
 				form.Children.Add(new RiffDataChunk("APal", new byte[] { }));
+			*/
 
 			try
 			{
