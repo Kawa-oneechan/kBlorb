@@ -18,6 +18,7 @@ namespace kBlorb
 
 		static UInt32 runningSize = 0;
 		static List<List<int>> pics = new List<List<int>>();
+		static List<int> apals = new List<int>();
 		static Dictionary<int, Tuple<string, string>> descs = new Dictionary<int, Tuple<string, string>>();
 		static int coverPic = -1;
 
@@ -94,12 +95,7 @@ namespace kBlorb
 			HandleMeta();
 			HandleRDesc();
 			HandleReso();
-
-			//TODO: add "adaptive" or "apal" bool to Picture entries, create APal with listed entries.
-			/*
-			if (json.Path<bool>("/apal", false))
-				form.Children.Add(new RiffDataChunk("APal", new byte[] { }));
-			*/
+			HandleAPal();
 
 			try
 			{
@@ -261,6 +257,27 @@ namespace kBlorb
 							ratios = new List<int>() { ratios[0], 1, ratios[1], 1, ratios[2], 1 };
 						ratios.Insert(0, index);
 						pics.Add(ratios);
+						if (fob.Path<bool>("/apal", false))
+						{
+							apals.Add(index);
+							try
+							{
+								source = fob.Path<string>("/src");
+								using (var pngCheck = File.Open(source, FileMode.Open))
+								{
+									pngCheck.Seek(0x18, SeekOrigin.Begin);
+									var bpp = pngCheck.ReadByte();
+									var ctp = pngCheck.ReadByte();
+									if (bpp != 4 || ctp != 3)
+										Console.WriteLine("Warning: {0} is marked as adaptive, but is not a 4bpp indexed image.", source);
+								}
+							}
+							catch (FileNotFoundException x)
+							{
+								Console.WriteLine("Error: could not find {0} for APal verification.", Path.GetFileName(x.FileName));
+								return false;
+							}
+						}
 						if (fob.Path<bool>("/cover", false))
 							coverPic = index;
 						if (desc != null)
@@ -405,6 +422,25 @@ namespace kBlorb
 			}
 
 			var chunk = new RiffDataChunk("Reso", resoData.ToArray());
+			form.Children.Add(chunk);
+
+			return true;
+		}
+
+		public static bool HandleAPal()
+		{
+			if (apals.Count == 0)
+				return false;
+
+			var apalData = new List<byte>();
+			foreach (var entry in apals)
+			{
+				ebWriter.Seek(0, SeekOrigin.Begin);
+				ebWriter.WriteMoto((UInt32)entry);
+				apalData.AddRange(eightBytes.Take(4));
+			}
+
+			var chunk = new RiffDataChunk("APal", apalData.ToArray());
 			form.Children.Add(chunk);
 
 			return true;
