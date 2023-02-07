@@ -14,6 +14,7 @@ namespace kBlorb
 		static JsonObj json = null;
 		static string source;
 		static string target;
+		static string header;
 		static Object[] files;
 
 		static UInt32 runningSize = 0;
@@ -82,6 +83,10 @@ namespace kBlorb
 				Console.WriteLine("Warning: no target specified. Will figure it out myself.");
 
 			form.Children.Add(rIdx);
+
+			header = json.Path<string>("/header", null);
+			if (!string.IsNullOrEmpty(header))
+				File.Delete(header);
 
 			if (!HandleFiles())
 				return 1;
@@ -329,6 +334,13 @@ namespace kBlorb
 							{
 								target = Path.ChangeExtension(source, chunkToBlorb[chunkName]);
 								Console.WriteLine("Note: decided on {0}.", target);
+							}
+						}
+						if (!string.IsNullOrEmpty(header) && fob.Path<string>("/id", null) != null)
+						{
+							using (var h = File.AppendText(header))
+							{
+								h.WriteLine("Constant {0} = {1};", fob.Path<string>("/id"), index);
 							}
 						}
 						Console.WriteLine("Chunk #{0}, type {1}", index, type);
